@@ -12,7 +12,6 @@
 - [Logging and Debugging](#logging-and-debugging)
 - [Contributing](#contributing)
 - [License](#license)
-- [Future Enhancements](#future-enhancements)
 
 ## Features
 - **Menu Management**: Create, view, and delete menus for various meal periods (e.g., Breakfast, Lunch, Dinner).

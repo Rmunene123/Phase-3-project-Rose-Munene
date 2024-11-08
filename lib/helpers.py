@@ -1,49 +1,102 @@
 # lib/helpers.py
-
 from sqlalchemy.orm import sessionmaker
-from .db.models.menu import Menu
-from .db.models.dish import Dish
-from .db.database import engine  # Your database setup module
+from .db.models import Menu, Dish  
+from .db.database import engine
+
+Session = sessionmaker(bind=engine)
 
 def create_menu():
     """Prompts user to create a new menu."""
     name = input("Enter menu name: ")
     menu = Menu(name=name)
-    session = sessionmaker(bind=engine)()
-    session.add(menu)
-    session.commit()
-    session.close()
-    print(f"Menu '{name}' created.")
+    session = Session()
+    try:
+        session.add(menu)
+        session.commit()
+        print(f"Menu '{name}' created successfully!")
+    except Exception as e:
+        session.rollback()
+        print(f"Error creating menu: {str(e)}")
+    finally:
+        session.close()
 
 def list_menus():
     """Lists all menus in the database."""
-    session = sessionmaker(bind=engine)()
-    menus = session.query(Menu).all()
-    for menu in menus:
-        print(menu)
-    session.close()
+    session = Session()
+    try:
+        menus = session.query(Menu).all()
+        if not menus:
+            print("No menus found.")
+            return
+        
+        print("\nAvailable Menus:")
+        print("=" * 20)
+        for menu in menus:
+            print(f"ID: {menu.id} - Name: {menu.name}")
+        print("=" * 20)
+    except Exception as e:
+        print(f"Error listing menus: {str(e)}")
+    finally:
+        session.close()
 
 def create_dish():
     """Prompts user to create a new dish."""
-    name = input("Enter dish name: ")
-    price = int(input("Enter dish price: "))
-    menu_id = int(input("Enter menu ID to associate with: "))
-    dish = Dish(name=name, price=price, menu_id=menu_id)
-    session = sessionmaker(bind=engine)()
-    session.add(dish)
-    session.commit()
-    session.close()
-    print(f"Dish '{name}' created.")
+    try:
+        name = input("Enter dish name: ")
+        while True:
+            try:
+                price = float(input("Enter dish price: "))
+                break
+            except ValueError:
+                print("Please enter a valid number for price.")
+        
+        # Show available menus
+        list_menus()
+        while True:
+            try:
+                menu_id = int(input("Enter menu ID to associate with: "))
+                break
+            except ValueError:
+                print("Please enter a valid number for menu ID.")
+
+        session = Session()
+        # Verify menu exists
+        menu = session.query(Menu).filter(Menu.id == menu_id).first()
+        if not menu:
+            print(f"Menu with ID {menu_id} not found.")
+            return
+
+        dish = Dish(name=name, price=price, menu_id=menu_id)
+        session.add(dish)
+        session.commit()
+        print(f"Dish '{name}' created successfully!")
+    except Exception as e:
+        session.rollback()
+        print(f"Error creating dish: {str(e)}")
+    finally:
+        session.close()
 
 def list_dishes():
     """Lists all dishes in the database."""
-    session = sessionmaker(bind=engine)()
-    dishes = session.query(Dish).all()
-    for dish in dishes:
-        print(dish)
-    session.close()
+    session = Session()
+    try:
+        dishes = session.query(Dish).all()
+        if not dishes:
+            print("No dishes found.")
+            return
+        
+        print("\nAvailable Dishes:")
+        print("=" * 40)
+        for dish in dishes:
+            menu_name = dish.menu.name if dish.menu else "No Menu"
+            print(f"ID: {dish.id} - Name: {dish.name} - Price: ${dish.price:.2f} - Menu: {menu_name}")
+        print("=" * 40)
+    except Exception as e:
+        print(f"Error listing dishes: {str(e)}")
+    finally:
+        session.close()
 
 def exit_program():
     """Exits the application."""
-    print("Goodbye!")
+    print("\nThank you for using the Restaurant Management System!")
     exit()
